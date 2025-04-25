@@ -1,11 +1,13 @@
 
 {
+  "homepage": "https://zalman11.github.io/youtube-browser-react",
   "name": "youtube-browser-react",
   "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "react": "^18.2.0",
