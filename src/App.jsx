@@ -1,9 +1,6 @@
-// Component: src/App.jsx
-
 import { useEffect, useState } from "react";
 
 const channelId = "UCKwQa5DB_VR98ac_r-Wyl-g";
-const channelHandle = "MercazDafYomi";
 const proxy = "https://api.allorigins.win/raw?url=";
 const playlistsRSS = `https://rsshub.app/youtube/channel/${channelId}/playlists`;
 const uploadsRSS = `https://rsshub.app/youtube/channel/${channelId}`;
@@ -12,23 +9,8 @@ function App() {
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState("");
   const [videos, setVideos] = useState([]);
+  const [filteredVideos, setFilteredVideos] = useState([]);
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const searchParam = params.get("search") || "";
-    const playlistParam = params.get("playlist") || "";
-    setSearch(searchParam);
-    setSelectedPlaylist(playlistParam);
-  }, []);
-
-  useEffect(() => {
-    fetchPlaylists();
-  }, []);
-
-  useEffect(() => {
-    loadVideos(selectedPlaylist);
-  }, [selectedPlaylist]);
 
   async function fetchXML(url) {
     const res = await fetch(proxy + encodeURIComponent(url));
@@ -57,7 +39,6 @@ function App() {
     const feedUrl = playlistId
       ? `https://rsshub.app/youtube/playlist/${playlistId}`
       : uploadsRSS;
-
     try {
       const xml = await fetchXML(feedUrl);
       const items = xml.getElementsByTagName("item");
@@ -68,17 +49,36 @@ function App() {
         return { title, videoId };
       });
       setVideos(loaded);
+      setFilteredVideos(loaded); // initially show all
     } catch (err) {
       console.error("Failed to load videos", err);
     }
   }
 
   function handleSearch() {
-    const query = search.trim();
-    if (!query) return;
-    const url = `https://www.youtube.com/@${channelHandle}/search?query=${encodeURIComponent(query)}`;
-    window.open(url, "_blank");
+    const query = search.trim().toLowerCase();
+    if (!query) {
+      setFilteredVideos(videos);
+      return;
+    }
+    const matched = videos.filter(video =>
+      video.title.toLowerCase().includes(query)
+    );
+    setFilteredVideos(matched);
   }
+
+  useEffect(() => {
+    fetchPlaylists();
+    loadVideos();
+  }, []);
+
+  useEffect(() => {
+    if (selectedPlaylist) {
+      loadVideos(selectedPlaylist);
+    } else {
+      loadVideos();
+    }
+  }, [selectedPlaylist]);
 
   return (
     <div className="p-4 max-w-6xl mx-auto">
@@ -89,16 +89,7 @@ function App() {
       <div className="flex flex-wrap gap-3 mb-6 justify-center">
         <select
           value={selectedPlaylist}
-          onChange={(e) => {
-            setSelectedPlaylist(e.target.value);
-            const params = new URLSearchParams(window.location.search);
-            if (e.target.value) {
-              params.set("playlist", e.target.value);
-            } else {
-              params.delete("playlist");
-            }
-            window.history.replaceState(null, "", `?${params.toString()}`);
-          }}
+          onChange={(e) => setSelectedPlaylist(e.target.value)}
           className="p-2 border rounded"
         >
           <option value="">All Videos</option>
@@ -113,7 +104,7 @@ function App() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           type="text"
-          placeholder="Search the channel"
+          placeholder="Search videos"
           className="p-2 border rounded w-64"
         />
         <button
@@ -125,10 +116,10 @@ function App() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {videos.length === 0 ? (
+        {filteredVideos.length === 0 ? (
           <p className="text-center col-span-full italic">No videos found.</p>
         ) : (
-          videos.map((video) => (
+          filteredVideos.map((video) => (
             <div key={video.videoId} className="bg-gray-100 p-2 rounded">
               <iframe
                 src={`https://www.youtube.com/embed/${video.videoId}`}
@@ -145,5 +136,3 @@ function App() {
 }
 
 export default App;
-
-
