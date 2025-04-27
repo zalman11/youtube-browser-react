@@ -49,7 +49,7 @@ function App() {
         return { title, videoId };
       });
       setVideos(loaded);
-      setFilteredVideos(loaded); // initially show all
+      setFilteredVideos(loaded);
     } catch (err) {
       console.error("Failed to load videos", err);
     }
